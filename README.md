@@ -99,6 +99,4 @@ X-Pand/
 
 ---
 
-## License
 
-Built for **Tomato** — Hackathon Submission 2026.
