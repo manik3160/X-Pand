@@ -36,7 +36,7 @@ class ThompsonSampler:
 
             print(
                 f"[thompson_sampling] Initialised Thompson Sampler with "
-                f"{len(self._posteriors)} arms (uniform prior α=1, β=1)"
+                f"{len(self._posteriors)} arms (uniform prior alpha=1, beta=1)"
             )
 
         except Exception as exc:

@@ -122,6 +122,18 @@ def run_gwr(gdf, X, y):
         ) from exc
 
 
+class OLSFallbackResults:
+    """Lightweight results-like object for the OLS fallback path."""
+
+    def __init__(self, intercept, coef, n, r2):
+        self.params = np.tile(
+            np.concatenate([[intercept], coef]), (n, 1)
+        )
+        self.localR2 = np.full((n, 1), r2)
+        self.aicc = float("nan")
+        self.is_fallback = True
+
+
 def _ols_fallback(gdf, X, y):
     """
     OLS fallback when GWR is infeasible.  Returns uniform coefficients
@@ -135,16 +147,6 @@ def _ols_fallback(gdf, X, y):
         grid_ids = gdf["grid_id"].values
 
         gwr_dict = {gid: coeffs.tolist() for gid in grid_ids}
-
-        # Create a lightweight results-like object
-        class OLSFallbackResults:
-            def __init__(self, intercept, coef, n, r2):
-                self.params = np.tile(
-                    np.concatenate([[intercept], coef]), (n, 1)
-                )
-                self.localR2 = np.full((n, 1), r2)
-                self.aicc = float("nan")
-                self.is_fallback = True
 
         r2 = ols.score(X, y)
         fallback_results = OLSFallbackResults(
