@@ -38,11 +38,13 @@ function GridLayer() {
         [p.lat + HALF_SIZE_LAT, p.lon - HALF_SIZE_LON],
       ]
       const [r, g, b] = getProfitColor(p.p_profit)
+      const baseOpacity = p.p_profit > 0.7 ? 0.65 : p.p_profit >= 0.4 ? 0.4 : 0.08
       return {
         ...p,
         corners,
         color: `rgb(${r},${g},${b})`,
-        fillColor: `rgba(${r},${g},${b},0.75)`,
+        fillColor: `rgb(${r},${g},${b})`,
+        baseOpacity,
         isSelected: p.grid_id === selectedCellId,
       }
     })
@@ -57,8 +59,8 @@ function GridLayer() {
           pathOptions={{
             color: cell.isSelected ? '#0099ff' : cell.color,
             fillColor: cell.fillColor,
-            fillOpacity: cell.isSelected ? 0.95 : 0.75,
-            weight: cell.isSelected ? 3 : 0.5,
+            fillOpacity: cell.isSelected ? 0.95 : cell.baseOpacity,
+            weight: cell.isSelected ? 3 : (cell.baseOpacity > 0.1 ? 0.5 : 0.2),
           }}
           eventHandlers={{
             click: () => setSelectedCellId(cell.grid_id),
