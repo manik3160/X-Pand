@@ -10,6 +10,7 @@ import type {
   TopLocationsResponse,
   GeocodeResponse,
   SystemStatus,
+  SearchResult,
 } from '@/types/api'
 
 // In dev, Vite proxy rewrites /api/* → http://localhost:8000/*
@@ -93,4 +94,15 @@ export async function reverseGeocode(
 export async function fetchStatus(): Promise<SystemStatus> {
   const { data } = await api.get<SystemStatus>('/status')
   return data
+}
+
+// ─── Forward Geocoding Search ───────────────────────
+export async function searchLocation(
+  query: string,
+  limit: number = 5
+): Promise<SearchResult[]> {
+  const { data } = await api.get<{ results: SearchResult[] }>('/search', {
+    params: { q: query, limit },
+  })
+  return data.results
 }

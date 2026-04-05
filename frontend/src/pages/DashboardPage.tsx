@@ -46,19 +46,19 @@ export default function DashboardPage() {
         {/* Content Area */}
         <div className="flex-1 flex overflow-hidden">
           {/* Map + Dashboard */}
-          <div className="flex-1 flex flex-col overflow-hidden p-4 gap-4">
+          <div className="flex-1 flex flex-col overflow-hidden px-3 pt-2 pb-3 gap-2">
             {/* Metric Cards */}
             {predictions.length > 0 && <MetricCards />}
 
             {/* Map + Right Panel */}
-            <div className="flex-1 flex gap-4 min-h-0">
+            <div className="flex-1 flex gap-3 min-h-0">
               {/* Map */}
               <div className="flex-1 min-w-0">
                 <CityMap />
               </div>
 
               {/* Right info column */}
-              <div className="w-72 flex flex-col gap-4 overflow-y-auto">
+              <div className="w-64 flex flex-col gap-3 overflow-y-auto">
                 <OptimizerPanel />
                 <TopLocations />
               </div>

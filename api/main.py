@@ -911,3 +911,54 @@ def reverse_geocode(
         "display_name": geo["display_name"],
         "address": geo["address"],
     }
+
+
+# ──────────────────────────────────────────────────────────────────────
+# GET /search — Forward geocoding (location search)
+# ──────────────────────────────────────────────────────────────────────
+
+@functools.lru_cache(maxsize=256)
+def _forward_geocode_cached(query: str, limit: int = 5):
+    """Cached forward geocode via Nominatim."""
+    try:
+        resp = http_requests.get(
+            "https://nominatim.openstreetmap.org/search",
+            params={
+                "q": query,
+                "format": "json",
+                "limit": limit,
+                "addressdetails": 1,
+                "countrycodes": "in",
+            },
+            headers={"User-Agent": "XPandAI-GIS/1.0"},
+            timeout=5,
+        )
+        if resp.status_code == 200:
+            results = []
+            for item in resp.json():
+                results.append({
+                    "lat": float(item["lat"]),
+                    "lon": float(item["lon"]),
+                    "display_name": item.get("display_name", ""),
+                    "type": item.get("type", ""),
+                })
+            return results
+    except Exception as exc:
+        print(f"[search] Nominatim forward geocode failed: {exc}")
+    return []
+
+
+@app.get("/search")
+def search_location(
+    q: str = Query(..., description="Search query (address, place name, etc.)"),
+    limit: int = Query(5, ge=1, le=10, description="Max results"),
+):
+    """
+    Forward geocode a text query to lat/lon coordinates.
+    Uses OpenStreetMap Nominatim, restricted to India.
+    """
+    if not q or len(q.strip()) < 2:
+        return {"results": []}
+
+    results = _forward_geocode_cached(q.strip().lower(), limit)
+    return {"results": results}

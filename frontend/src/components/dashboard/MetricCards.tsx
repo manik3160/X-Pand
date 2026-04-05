@@ -27,11 +27,11 @@ interface CardProps {
 function MetricCard({ label, value, color, borderColor }: CardProps) {
   return (
     <div
-      className="metric-card"
+      className="metric-card py-2.5 px-4"
       style={{ borderBottom: `2px solid ${borderColor}` }}
     >
-      <span className="metric-label">{label}</span>
-      <div className="metric-value font-heading tabular-nums" style={{ color }}>
+      <span className="metric-label text-[10px]">{label}</span>
+      <div className="metric-value font-heading tabular-nums text-xl" style={{ color }}>
         <AnimCounter end={value} />
       </div>
     </div>

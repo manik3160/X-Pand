@@ -107,3 +107,10 @@ export interface SystemStatus {
   cities_loaded: string[]
   cities_detail: Record<string, { cells: number; features: number }>
 }
+
+export interface SearchResult {
+  lat: number
+  lon: number
+  display_name: string
+  type: string
+}

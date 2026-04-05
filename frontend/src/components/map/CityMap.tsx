@@ -1,14 +1,25 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { MapContainer, TileLayer, useMap, Polygon, CircleMarker, Popup, Tooltip } from 'react-leaflet'
 import type { Map as LeafletMap } from 'leaflet'
 import { useApp } from '@/hooks/useApp'
 import { getProfitColor, formatPercent } from '@/lib/utils'
+import SearchBar from './SearchBar'
 
 function FlyToCity({ center, zoom }: { center: [number, number]; zoom: number }) {
   const map = useMap()
   useEffect(() => {
     map.flyTo(center, zoom, { duration: 1.5 })
   }, [center, zoom, map])
+  return null
+}
+
+function FlyToPoint({ target }: { target: { lat: number; lon: number; zoom: number } | null }) {
+  const map = useMap()
+  useEffect(() => {
+    if (target) {
+      map.flyTo([target.lat, target.lon], target.zoom, { duration: 1.2 })
+    }
+  }, [target, map])
   return null
 }
 
@@ -31,7 +42,7 @@ function GridLayer() {
         ...p,
         corners,
         color: `rgb(${r},${g},${b})`,
-        fillColor: `rgba(${r},${g},${b},0.6)`,
+        fillColor: `rgba(${r},${g},${b},0.75)`,
         isSelected: p.grid_id === selectedCellId,
       }
     })
@@ -46,7 +57,7 @@ function GridLayer() {
           pathOptions={{
             color: cell.isSelected ? '#0099ff' : cell.color,
             fillColor: cell.fillColor,
-            fillOpacity: cell.isSelected ? 0.9 : 0.55,
+            fillOpacity: cell.isSelected ? 0.95 : 0.75,
             weight: cell.isSelected ? 3 : 0.5,
           }}
           eventHandlers={{
@@ -136,14 +147,41 @@ function MapLegend() {
 }
 
 export default function CityMap() {
-  const { cities, selectedCity, predictions, predictionsLoading } = useApp()
+  const { cities, selectedCity, predictions, predictionsLoading, setSelectedCellId } = useApp()
   const mapRef = useRef<LeafletMap | null>(null)
+  const [flyTarget, setFlyTarget] = useState<{ lat: number; lon: number; zoom: number } | null>(null)
 
   const cityInfo = cities.find(c => c.key === selectedCity)
   const center: [number, number] = cityInfo
     ? [cityInfo.map_center.lat, cityInfo.map_center.lon]
     : [28.65, 77.10]
   const zoom = cityInfo?.zoom || 10.2
+
+  const handleSearchSelect = useCallback((lat: number, lon: number, _displayName: string) => {
+    // 1. Fly map to the searched location
+    setFlyTarget({ lat, lon, zoom: 15 })
+
+    // 2. Find the nearest grid cell within ~2km
+    if (predictions.length === 0) return
+
+    let bestDist = Infinity
+    let bestId: string | null = null
+
+    for (const p of predictions) {
+      const dLat = (p.lat - lat) * 111.32 // ~km per degree lat
+      const dLon = (p.lon - lon) * 111.32 * Math.cos(lat * Math.PI / 180)
+      const dist = Math.sqrt(dLat * dLat + dLon * dLon)
+      if (dist < bestDist) {
+        bestDist = dist
+        bestId = p.grid_id
+      }
+    }
+
+    // Only auto-select if within 2km — otherwise it's out of grid bounds
+    if (bestId && bestDist < 2) {
+      setSelectedCellId(bestId)
+    }
+  }, [predictions, setSelectedCellId])
 
   return (
     <div
@@ -153,6 +191,9 @@ export default function CityMap() {
         border: '1px solid rgba(255, 255, 255, 0.08)',
       }}
     >
+      {/* Search Bar */}
+      <SearchBar onSelect={handleSearchSelect} />
+
       {/* Loading overlay */}
       {predictionsLoading && (
         <div
@@ -183,6 +224,7 @@ export default function CityMap() {
           maxZoom={19}
         />
         <FlyToCity center={center} zoom={zoom} />
+        <FlyToPoint target={flyTarget} />
         {predictions.length > 0 && <GridLayer />}
         <HubMarkers />
       </MapContainer>
@@ -203,3 +245,4 @@ export default function CityMap() {
     </div>
   )
 }
+
