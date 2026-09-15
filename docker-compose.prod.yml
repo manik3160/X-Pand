@@ -1,0 +1,60 @@
+version: '3.9'
+
+services:
+  # FastAPI Backend API
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - API_ENVIRONMENT=production
+      - LOG_LEVEL=info
+    volumes:
+      - ./data:/app/data:ro
+      - ./models:/app/models:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    networks:
+      - xpand-network
+    labels:
+      - "com.xpand.component=api"
+      - "com.xpand.version=1.0"
+
+  # Frontend Nginx
+  frontend:
+    image: nginx:alpine
+    ports:
+      - "3000:80"
+    volumes:
+      - ./frontend/dist:/usr/share/nginx/html:ro
+      - ./nginx.prod.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - xpand-network
+    labels:
+      - "com.xpand.component=frontend"
+      - "com.xpand.version=1.0"
+
+networks:
+  xpand-network:
+    driver: bridge
+
+volumes:
+  data:
+  models:

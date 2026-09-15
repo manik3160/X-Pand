@@ -20,6 +20,7 @@ import geopandas as gpd
 from shapely.geometry import Point
 from fastapi import FastAPI, Response, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from typing import Optional
 
 from api.model_loader import load_all_models
@@ -119,6 +120,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.add_middleware(GZipMiddleware, minimum_size=500)
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -244,6 +247,12 @@ def _get_training_data(feature_names):
 # ──────────────────────────────────────────────────────────────────────
 # GET /cities
 # ──────────────────────────────────────────────────────────────────────
+
+@app.get("/health")
+def health_check():
+    """Lightweight liveness check for load balancers and container probes."""
+    return {"status": "healthy"}
+
 
 @app.get("/cities", response_model=CityListResponse)
 def list_cities():

@@ -1,0 +1,40 @@
+# Secrets
+.env
+.env.*
+
+# VCS / tooling
+.git
+.github
+.vscode
+.idea
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+ENV/
+.pytest_cache/
+
+# Frontend (built inside the image)
+frontend/node_modules/
+frontend/dist/
+
+# Large / local-only data
+*.tif
+data/processed/combined_features.csv
+data/processed/combined_features.geojson
+data/processed/weights_matrix.pkl
+data/combined_features.geojson
+notebooks/
+logs/
+*.log
+
+# Deployment config not needed in the image
+k8s/
+scripts/
+docker-compose*.yml
+Dockerfile
+*.md
