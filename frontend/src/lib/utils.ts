@@ -1,12 +1,16 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { profitColorHex, profitColorRgb, profitFillOpacity } from "./theme"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
 export function formatPercent(value: number): string {
-  return `${(value * 100).toFixed(1)}%`
+  // Clamp display below 100% — a model score of 0.995-0.999 should never
+  // read as a false-certain "100.0%".
+  const pct = Math.min(value * 100, 99.9)
+  return `${pct.toFixed(1)}%`
 }
 
 export function formatNumber(value: number): string {
@@ -22,14 +26,6 @@ export function getRecommendationColor(rec: string): string {
   }
 }
 
-export function getProfitColor(p: number): [number, number, number] {
-  if (p > 0.7) return [0, 255, 136]     // #00ff88
-  if (p >= 0.4) return [255, 170, 0]    // #ffaa00
-  return [255, 68, 68]                   // #ff4444
-}
-
-export function getProfitColorHex(p: number): string {
-  if (p > 0.7) return '#00ff88'
-  if (p >= 0.4) return '#ffaa00'
-  return '#ff4444'
-}
+export const getProfitColor = profitColorRgb
+export const getProfitColorHex = profitColorHex
+export const getProfitFillOpacity = profitFillOpacity

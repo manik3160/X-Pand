@@ -5,8 +5,49 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ════════ BASE ══════════ */
+/* ════════ DESIGN TOKENS ══════════
+   Bare RGB channels so Tailwind's /opacity modifiers work: rgb(var(--x) / <alpha>) */
 @layer base {
+  :root {
+    --bg: 11 13 16;              /* #0b0d10 page / map background */
+    --surface: 20 23 28;         /* #14171c panels */
+    --surface-raised: 29 33 40;  /* #1d2128 hover, inputs */
+    --line: 255 255 255;         /* used as border-line/10 etc */
+
+    --text: 232 234 237;         /* #e8eaed  ~15:1 on surface */
+    --text-muted: 160 166 176;   /* #a0a6b0 ~7:1 */
+    --text-subtle: 128 135 146;  /* #808792 ~4.6:1 (AA floor) */
+
+    --accent: 122 162 255;       /* #7aa2ff single accent */
+    --accent-fg: 11 13 16;
+
+    --profit-high: 52 211 153;   /* #34d399 */
+    --profit-mid: 251 191 36;    /* #fbbf24 */
+    --profit-low: 248 113 113;   /* #f87171 */
+
+    --radius-panel: 14px;
+    --radius-control: 10px;
+    --shadow-panel: 0 8px 24px rgb(0 0 0 / .35);
+
+    --z-panel: 10;
+    --z-sheet: 20;
+    --z-banner: 30;
+
+    --dur-fast: 120ms;
+    --dur: 200ms;
+    --ease-out: cubic-bezier(.2, .8, .2, 1);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :root { --dur-fast: 0ms; --dur: 0ms; }
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
   * {
     margin: 0;
     padding: 0;
@@ -19,21 +60,25 @@
 
   body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    background: #040406;
+    background: rgb(var(--bg));
     background-image:
-      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 255, 136, 0.08) 0%, transparent 60%),
-      radial-gradient(ellipse 60% 40% at 80% 80%, rgba(0, 153, 255, 0.06) 0%, transparent 50%);
-    color: #ffffff;
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgb(var(--accent) / 0.06) 0%, transparent 60%);
+    color: rgb(var(--text));
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
+  :focus-visible {
+    outline: 2px solid rgb(var(--accent));
+    outline-offset: 2px;
+  }
+
   /* Scrollbar */
   ::-webkit-scrollbar { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
-  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+  ::-webkit-scrollbar-thumb { background: rgb(var(--line) / 0.1); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgb(var(--line) / 0.2); }
 
   /* Typography features */
   h1, h2, h3, h4, h5, h6 {
@@ -43,34 +88,49 @@
   }
 }
 
-/* ══════════ GLASS COMPONENTS ══════════ */
+/* ══════════ PANEL (floating surface used by dashboard panels) ══════════ */
+@layer components {
+  .panel {
+    background: rgb(var(--surface) / 0.85);
+    border: 1px solid rgb(var(--line) / 0.08);
+    border-radius: var(--radius-panel);
+    box-shadow: var(--shadow-panel);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  @supports not (backdrop-filter: blur(1px)) {
+    .panel { background: rgb(var(--surface) / 0.97); }
+  }
+}
+
+/* ══════════ GLASS COMPONENTS (legacy classnames, tokenized) ══════════ */
 @layer components {
   .glass-card {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgb(var(--surface) / 0.6);
+    border: 1px solid rgb(var(--line) / 0.08);
     border-radius: 16px;
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
   }
 
   .glass-card-hover {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgb(var(--surface) / 0.6);
+    border: 1px solid rgb(var(--line) / 0.08);
     border-radius: 16px;
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all var(--dur) var(--ease-out);
   }
   .glass-card-hover:hover {
-    background: rgba(255, 255, 255, 0.07);
-    border-color: rgba(255, 255, 255, 0.12);
+    background: rgb(var(--surface-raised) / 0.7);
+    border-color: rgb(var(--line) / 0.12);
     transform: translateY(-2px);
   }
 
   /* Metric card */
   .metric-card {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgb(var(--surface) / 0.6);
+    border: 1px solid rgb(var(--line) / 0.08);
     border-radius: 16px;
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
@@ -78,15 +138,15 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all var(--dur) var(--ease-out);
   }
   .metric-card:hover {
-    border-color: rgba(255, 255, 255, 0.12);
+    border-color: rgb(var(--line) / 0.12);
   }
   .metric-label {
     font-size: 11px;
     font-weight: 600;
-    color: #44445a;
+    color: rgb(var(--text-subtle));
     text-transform: uppercase;
     letter-spacing: 0.08em;
   }
@@ -95,30 +155,30 @@
     font-variant-numeric: tabular-nums;
     font-size: 1.75rem;
     font-weight: 600;
-    color: #ffffff;
+    color: rgb(var(--text));
   }
 
   /* Status badges */
   .badge-open {
     @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold;
-    background: rgba(0, 255, 136, 0.1);
-    color: #00ff88;
-    border: 1px solid rgba(0, 255, 136, 0.3);
+    background: rgb(var(--profit-high) / 0.12);
+    color: rgb(var(--profit-high));
+    border: 1px solid rgb(var(--profit-high) / 0.3);
   }
   .badge-monitor {
     @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold;
-    background: rgba(255, 170, 0, 0.1);
-    color: #ffaa00;
-    border: 1px solid rgba(255, 170, 0, 0.3);
+    background: rgb(var(--profit-mid) / 0.12);
+    color: rgb(var(--profit-mid));
+    border: 1px solid rgb(var(--profit-mid) / 0.3);
   }
   .badge-skip {
     @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold;
-    background: rgba(255, 68, 68, 0.1);
-    color: #ff4444;
-    border: 1px solid rgba(255, 68, 68, 0.3);
+    background: rgb(var(--profit-low) / 0.12);
+    color: rgb(var(--profit-low));
+    border: 1px solid rgb(var(--profit-low) / 0.3);
   }
 
-  /* Primary button — green */
+  /* Primary button — accent */
   .btn-primary {
     display: inline-flex;
     align-items: center;
@@ -126,21 +186,24 @@
     gap: 8px;
     padding: 0 32px;
     height: 52px;
-    background: #00ff88;
-    color: #040406;
+    background: rgb(var(--accent));
+    color: rgb(var(--accent-fg));
     font-weight: 700;
     font-size: 16px;
     border-radius: 12px;
     border: none;
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all var(--dur) var(--ease-out);
   }
   .btn-primary:hover {
-    filter: brightness(1.1);
-    box-shadow: 0 0 40px rgba(0, 255, 136, 0.25), 0 0 80px rgba(0, 255, 136, 0.1);
+    filter: brightness(1.08);
   }
   .btn-primary:active {
     transform: scale(0.98);
+  }
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   /* Secondary / outline button */
@@ -152,20 +215,20 @@
     padding: 0 24px;
     height: 48px;
     background: transparent;
-    color: #ffffff;
+    color: rgb(var(--text));
     font-weight: 600;
     font-size: 14px;
     border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid rgb(var(--line) / 0.15);
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all var(--dur) var(--ease-out);
   }
   .btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(0, 255, 136, 0.4);
+    background: rgb(var(--surface-raised) / 0.5);
+    border-color: rgb(var(--accent) / 0.4);
   }
 
-  /* Nav button — green outline */
+  /* Nav button — accent outline */
   .btn-nav {
     display: inline-flex;
     align-items: center;
@@ -174,50 +237,50 @@
     padding: 0 20px;
     height: 40px;
     background: transparent;
-    color: #00ff88;
+    color: rgb(var(--accent));
     font-weight: 600;
     font-size: 14px;
     border-radius: 10px;
-    border: 1px solid rgba(0, 255, 136, 0.3);
+    border: 1px solid rgb(var(--accent) / 0.3);
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all var(--dur) var(--ease-out);
   }
   .btn-nav:hover {
-    background: rgba(0, 255, 136, 0.06);
-    box-shadow: 0 0 20px rgba(0, 255, 136, 0.1);
+    background: rgb(var(--accent) / 0.08);
   }
 
   /* Leaflet overrides */
   .leaflet-container {
-    background: #040406 !important;
+    background: rgb(var(--bg)) !important;
     border-radius: 16px;
+    isolation: isolate;
   }
 }
 
 /* ══════════ LEAFLET POPUP OVERRIDES ══════════ */
 .leaflet-popup-content-wrapper {
-  background: rgba(10, 10, 15, 0.95) !important;
-  color: #ffffff !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: rgb(var(--surface) / 0.95) !important;
+  color: rgb(var(--text)) !important;
+  border: 1px solid rgb(var(--line) / 0.08) !important;
   border-radius: 12px !important;
-  box-shadow: 0 0 40px rgba(0, 0, 0, 0.5) !important;
+  box-shadow: var(--shadow-panel) !important;
   backdrop-filter: blur(20px);
 }
 .leaflet-popup-tip {
-  background: rgba(10, 10, 15, 0.95) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: rgb(var(--surface) / 0.95) !important;
+  border: 1px solid rgb(var(--line) / 0.08) !important;
 }
 .leaflet-popup-close-button {
-  color: #8888aa !important;
+  color: rgb(var(--text-muted)) !important;
 }
 
 /* ══════════ LEAFLET TOOLTIP OVERRIDES ══════════ */
 .leaflet-tooltip {
-  background: rgba(10, 10, 15, 0.95) !important;
-  color: #ffffff !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: rgb(var(--surface) / 0.95) !important;
+  color: rgb(var(--text)) !important;
+  border: 1px solid rgb(var(--line) / 0.1) !important;
   border-radius: 10px !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6) !important;
+  box-shadow: var(--shadow-panel) !important;
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
   padding: 8px 12px !important;
@@ -225,43 +288,25 @@
   font-size: 12px !important;
 }
 .leaflet-tooltip-top::before {
-  border-top-color: rgba(10, 10, 15, 0.95) !important;
+  border-top-color: rgb(var(--surface) / 0.95) !important;
 }
 .leaflet-tooltip-bottom::before {
-  border-bottom-color: rgba(10, 10, 15, 0.95) !important;
+  border-bottom-color: rgb(var(--surface) / 0.95) !important;
 }
 .leaflet-tooltip-left::before {
-  border-left-color: rgba(10, 10, 15, 0.95) !important;
+  border-left-color: rgb(var(--surface) / 0.95) !important;
 }
 .leaflet-tooltip-right::before {
-  border-right-color: rgba(10, 10, 15, 0.95) !important;
+  border-right-color: rgb(var(--surface) / 0.95) !important;
 }
 
-/* ══════════ GLOW BUTTON ══════════ */
-.btn-glow {
-  position: relative;
-  overflow: visible;
+/* ══════════ LEAFLET ATTRIBUTION ══════════ */
+.leaflet-control-attribution {
+  background: rgb(var(--surface) / 0.7) !important;
+  color: rgb(var(--text-subtle)) !important;
 }
-.btn-glow::before {
-  content: '';
-  position: absolute;
-  inset: -2px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #00ff88, #00cc6a, #00ff88);
-  opacity: 0.4;
-  filter: blur(12px);
-  z-index: -1;
-  transition: opacity 0.3s, filter 0.3s;
-  animation: glowPulse 3s ease-in-out infinite;
-}
-.btn-glow:hover::before {
-  opacity: 0.7;
-  filter: blur(18px);
-}
-
-@keyframes glowPulse {
-  0%, 100% { opacity: 0.3; filter: blur(12px); }
-  50% { opacity: 0.55; filter: blur(16px); }
+.leaflet-control-attribution a {
+  color: rgb(var(--text-muted)) !important;
 }
 
 /* ══════════ SLIDER OVERRIDES ══════════ */
@@ -270,7 +315,7 @@ input[type="range"] {
   appearance: none;
   width: 100%;
   height: 4px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgb(var(--line) / 0.1);
   border-radius: 2px;
   outline: none;
   cursor: pointer;
@@ -281,49 +326,54 @@ input[type="range"]::-webkit-slider-thumb {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #ffffff;
-  border: 2px solid #00ff88;
+  background: rgb(var(--text));
+  border: 2px solid rgb(var(--accent));
   cursor: pointer;
-  transition: box-shadow 0.2s;
+  transition: box-shadow var(--dur-fast);
 }
 input[type="range"]::-webkit-slider-thumb:hover,
 input[type="range"]::-webkit-slider-thumb:active {
-  box-shadow: 0 0 12px rgba(0, 255, 136, 0.4);
+  box-shadow: 0 0 0 6px rgb(var(--accent) / 0.15);
 }
 input[type="range"]::-moz-range-thumb {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #ffffff;
-  border: 2px solid #00ff88;
+  background: rgb(var(--text));
+  border: 2px solid rgb(var(--accent));
   cursor: pointer;
 }
 
 /* ══════════ LOADING SKELETON ══════════ */
 .skeleton {
   background: linear-gradient(90deg,
-    rgba(255,255,255,0.05) 25%,
-    rgba(255,255,255,0.1) 50%,
-    rgba(255,255,255,0.05) 75%
+    rgb(var(--line) / 0.05) 25%,
+    rgb(var(--line) / 0.1) 50%,
+    rgb(var(--line) / 0.05) 75%
   );
   background-size: 400% 100%;
   animation: shimmer 2s ease-in-out infinite;
+  border-radius: var(--radius-control);
 }
 
-/* ══════════ LIVE PULSE DOT ══════════ */
-.live-dot {
-  width: 8px;
-  height: 8px;
+/* ══════════ STATUS / LIVE DOT ══════════
+   `.live-dot` variants take a `data-state` of ok | warn | off (default: ok) */
+.live-dot,
+.live-dot-sm {
   border-radius: 50%;
-  background: #00ff88;
+  background: rgb(var(--profit-high));
   animation: pulseLive 2s ease-in-out infinite;
 }
-.live-dot-sm {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #00ff88;
-  animation: pulseLive 2s ease-in-out infinite;
+.live-dot { width: 8px; height: 8px; }
+.live-dot-sm { width: 6px; height: 6px; }
+.live-dot[data-state="warn"],
+.live-dot-sm[data-state="warn"] {
+  background: rgb(var(--profit-mid));
+}
+.live-dot[data-state="off"],
+.live-dot-sm[data-state="off"] {
+  background: rgb(var(--profit-low));
+  animation: none;
 }
 
 @keyframes pulseLive {

@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "xpand-api",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"],
+      "port": 8000
+    },
+    {
+      "name": "xpand-frontend",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd frontend && npm run dev"],
+      "port": 5173
+    }
+  ]
+}

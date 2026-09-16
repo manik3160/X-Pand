@@ -1,16 +1,18 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { MapPin, ChevronDown, Loader2, ArrowLeft, CheckCircle2, Zap } from 'lucide-react'
+import { MapPin, ChevronDown, Loader2, ArrowLeft, CheckCircle2, Zap, AlertTriangle } from 'lucide-react'
 import { useApp } from '@/hooks/useApp'
+import { useServerStatus } from '@/hooks/useServerStatus'
 import { cn } from '@/lib/utils'
 
 export default function Sidebar() {
   const navigate = useNavigate()
   const {
-    cities, selectedCity, setSelectedCity, loadCityData,
-    predictions, predictionsLoading,
-    optimizeResult, optimizing, runOptimize,
+    cities, citiesLoading, selectedCity, setSelectedCity, loadCityData,
+    predictions, predictionsLoading, predictionsError,
+    optimizeResult, optimizing, optimizeError, runOptimize,
   } = useApp()
+  const { status: serverStatus, refresh: refreshServerStatus } = useServerStatus()
 
   const [minProb, setMinProb] = useState(0.5)
   const [maxHubs, setMaxHubs] = useState(10)
@@ -26,10 +28,10 @@ export default function Sidebar() {
   }, [setSelectedCity, loadCityData])
 
   useEffect(() => {
-    if (cities.length > 0 && predictions.length === 0 && !predictionsLoading) {
+    if (cities.length > 0 && predictions.length === 0 && !predictionsLoading && !predictionsError) {
       loadCityData(selectedCity)
     }
-  }, [cities, selectedCity, predictions.length, predictionsLoading, loadCityData])
+  }, [cities, selectedCity, predictions.length, predictionsLoading, predictionsError, loadCityData])
 
   const handleOptimize = () => {
     runOptimize({
@@ -64,9 +66,17 @@ export default function Sidebar() {
             <div className="text-[11px] text-text-muted">BI-101 · Geospatial Intelligence</div>
           </div>
         </div>
-        <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 rounded-full" style={{ background: 'rgba(0,255,136,0.06)', border: '1px solid rgba(0,255,136,0.15)' }}>
-          <div className="live-dot-sm" />
-          <span className="text-[11px] font-semibold text-accent">LIVE ML</span>
+        <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 rounded-full" style={{ background: 'rgb(var(--accent) / 0.06)', border: '1px solid rgb(var(--accent) / 0.15)' }}>
+          <div
+            className="live-dot-sm"
+            data-state={serverStatus === 'online' ? 'ok' : serverStatus === 'offline' ? 'off' : 'warn'}
+          />
+          <span className="text-[11px] font-semibold text-accent">
+            {serverStatus === 'online' && 'LIVE ML'}
+            {serverStatus === 'waking' && 'WAKING UP…'}
+            {serverStatus === 'checking' && 'CONNECTING…'}
+            {serverStatus === 'offline' && 'OFFLINE'}
+          </span>
         </div>
       </div>
 
@@ -163,12 +173,12 @@ export default function Sidebar() {
         {/* Run Button */}
         <button
           onClick={handleOptimize}
-          disabled={optimizing || predictionsLoading}
+          disabled={optimizing || predictionsLoading || predictions.length === 0}
           className={cn(
-            "w-full flex items-center justify-center gap-2 h-12 rounded-xl font-bold text-sm transition-all",
+            "w-full flex items-center justify-center gap-2 h-12 rounded-xl font-bold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed",
             optimizing
-              ? "bg-[rgba(0,255,136,0.1)] text-accent cursor-wait"
-              : "bg-gradient-to-r from-accent to-[#00cc6a] text-[#040406] hover:brightness-105 hover:shadow-glow-green"
+              ? "bg-[rgb(var(--accent)/0.1)] text-accent cursor-wait"
+              : "bg-accent text-accent-fg hover:brightness-105 hover:shadow-glow-green"
           )}
         >
           {optimizing ? (
@@ -183,7 +193,40 @@ export default function Sidebar() {
             </>
           )}
         </button>
+
+        {optimizeError && (
+          <div
+            className="mt-3 flex items-start gap-2 rounded-lg px-3 py-2.5 text-xs"
+            style={{ background: 'rgb(var(--profit-low) / 0.08)', border: '1px solid rgb(var(--profit-low) / 0.25)', color: 'rgb(var(--profit-low))' }}
+            role="alert"
+          >
+            <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+            <span>{optimizeError}</span>
+          </div>
+        )}
       </div>
+
+      {/* ─── Prediction load error ─── */}
+      {predictionsError && (
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <div
+            className="rounded-xl p-4 flex items-start gap-2.5"
+            style={{ background: 'rgb(var(--profit-low) / 0.06)', border: '1px solid rgb(var(--profit-low) / 0.25)' }}
+            role="alert"
+          >
+            <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'rgb(var(--profit-low))' }} />
+            <div className="flex-1">
+              <div className="text-xs font-medium" style={{ color: 'rgb(var(--profit-low))' }}>{predictionsError}</div>
+              <button
+                onClick={() => loadCityData(selectedCity)}
+                className="mt-2 text-xs font-semibold text-accent hover:underline"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ─── Optimization Result ─── */}
       {optimizeResult && (
@@ -191,9 +234,8 @@ export default function Sidebar() {
           <div
             className="rounded-xl p-4"
             style={{
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(0, 255, 136, 0.3)',
-              boxShadow: '0 0 30px rgba(0, 255, 136, 0.08)',
+              background: 'rgb(var(--surface-raised) / 0.4)',
+              border: '1px solid rgb(var(--accent) / 0.3)',
             }}
           >
             <div className="text-2xl font-bold text-accent font-heading mb-2">
@@ -231,16 +273,30 @@ export default function Sidebar() {
       <div className="px-5 py-4 mt-auto">
         <div className="space-y-2.5">
           <div className="flex items-center gap-2">
-            <div className="live-dot-sm" />
-            <span className="text-xs text-text-secondary">API Connected</span>
+            <div className="live-dot-sm" data-state={serverStatus === 'online' ? 'ok' : serverStatus === 'offline' ? 'off' : 'warn'} />
+            <span className="text-xs text-text-secondary">
+              {serverStatus === 'online' && 'API connected'}
+              {serverStatus === 'waking' && 'API waking up…'}
+              {serverStatus === 'checking' && 'Connecting to API…'}
+              {serverStatus === 'offline' && 'API unreachable'}
+            </span>
+            {serverStatus === 'offline' && (
+              <button onClick={refreshServerStatus} className="text-xs font-semibold text-accent hover:underline">
+                Retry
+              </button>
+            )}
           </div>
           <div className="flex items-center gap-2">
-            <div className="live-dot-sm" />
-            <span className="text-xs text-text-secondary">Models Loaded</span>
+            <div className="live-dot-sm" data-state={predictionsError ? 'off' : predictions.length > 0 ? 'ok' : 'warn'} />
+            <span className="text-xs text-text-secondary">
+              {predictionsError ? 'Models unavailable' : predictions.length > 0 ? 'Models loaded' : 'Loading models…'}
+            </span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="live-dot-sm" />
-            <span className="text-xs text-text-secondary">{cities.length} Cities Active</span>
+            <div className="live-dot-sm" data-state={citiesLoading ? 'warn' : 'ok'} />
+            <span className="text-xs text-text-secondary">
+              {citiesLoading ? 'Loading cities…' : `${cities.length} cities active`}
+            </span>
           </div>
         </div>
       </div>
