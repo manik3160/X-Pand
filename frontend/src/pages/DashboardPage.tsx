@@ -1,74 +1,97 @@
-import Sidebar from '@/components/layout/Sidebar'
-import CityMap from '@/components/map/CityMap'
-import MetricCards from '@/components/dashboard/MetricCards'
-import CellDetail from '@/components/dashboard/CellDetail'
-import TopLocations from '@/components/dashboard/TopLocations'
-import OptimizerPanel from '@/components/dashboard/OptimizerPanel'
+import { useEffect } from 'react'
 import { useApp } from '@/hooks/useApp'
+import { MapFocusProvider } from '@/hooks/useMapFocus'
+import CityMap, { MapLegend } from '@/components/map/CityMap'
+import TopBar from '@/components/dashboard/TopBar'
+import ControlsCard from '@/components/dashboard/ControlsCard'
+import ResultsCard from '@/components/dashboard/ResultsCard'
+import CellDetail from '@/components/dashboard/CellDetail'
+import SideSheet from '@/components/ui/SideSheet'
+import ErrorBanner from '@/components/ui/ErrorBanner'
 
-export default function DashboardPage() {
-  const { predictions, selectedCellId, selectedCity, cities } = useApp()
-  const cityInfo = cities.find(c => c.key === selectedCity)
+/**
+ * Page-level data effects. Two of these used to live inside components
+ * that Radix Tabs would unmount (TopLocations) or that were about to be
+ * deleted (Sidebar) — both need to survive regardless of which tab or
+ * panel is currently visible.
+ */
+function useDashboardEffects() {
+  const {
+    cities, selectedCity, predictions, predictionsLoading, predictionsError, loadCityData,
+    loadTopLocations,
+  } = useApp()
+
+  // Initial (and only) city load. Guarded by predictionsError so a failed
+  // load shows a retry banner instead of retrying forever.
+  useEffect(() => {
+    if (cities.length > 0 && predictions.length === 0 && !predictionsLoading && !predictionsError) {
+      loadCityData(selectedCity)
+    }
+  }, [cities, selectedCity, predictions.length, predictionsLoading, predictionsError, loadCityData])
+
+  useEffect(() => {
+    if (predictions.length > 0) {
+      loadTopLocations(selectedCity, 8)
+    }
+  }, [selectedCity, predictions.length, loadTopLocations])
+}
+
+function DashboardContent() {
+  const { selectedCellId, setSelectedCellId, predictionsError, loadCityData, selectedCity } = useApp()
+  useDashboardEffects()
 
   return (
-    <div className="h-screen w-screen flex overflow-hidden" style={{ background: '#040406' }}>
-      {/* Sidebar */}
-      <Sidebar />
+    <div className="h-screen w-screen overflow-hidden relative" style={{ background: 'rgb(var(--bg))' }}>
+      <CityMap />
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header Bar */}
-        <header
-          className="h-14 flex items-center justify-between px-6 flex-shrink-0"
-          style={{
-            background: 'rgba(4, 4, 6, 0.8)',
-            backdropFilter: 'blur(20px)',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
-          }}
-        >
-          <div className="flex items-center gap-4">
-            <h1 className="text-lg font-semibold text-white font-heading tracking-tight">
-              Profitability Prediction Map
-            </h1>
-            <span className="text-[13px] text-text-muted uppercase tracking-wider">
-              {cityInfo?.name || selectedCity} — 500m Grid
-            </span>
+      {/* Floating chrome — pointer-events re-enabled per element so clicks pass through to the map elsewhere */}
+      <div className="pointer-events-none absolute inset-0 flex flex-col">
+        <div className="p-3 pointer-events-none">
+          <TopBar />
+        </div>
+
+        {predictionsError && (
+          <div className="px-3 pointer-events-auto max-w-[420px]">
+            <ErrorBanner message={predictionsError} onRetry={() => loadCityData(selectedCity)} className="panel" />
           </div>
-          <div className="flex items-center gap-4 text-xs">
-            <div className="flex items-center gap-2 px-3 py-1 rounded-full" style={{ background: 'rgba(0,255,136,0.06)', border: '1px solid rgba(0,255,136,0.15)' }}>
-              <div className="live-dot-sm" />
-              <span className="text-accent font-semibold">LIVE SCORED</span>
-            </div>
-            <span className="text-text-muted font-heading tabular-nums">{predictions.length.toLocaleString()} cells</span>
+        )}
+
+        {/* Desktop: floating side panels */}
+        <div className="hidden md:flex flex-1 min-h-0 px-3 pb-3 justify-between items-start gap-3">
+          <div className="pointer-events-auto">
+            <ControlsCard />
           </div>
-        </header>
-
-        {/* Content Area */}
-        <div className="flex-1 flex overflow-hidden">
-          {/* Map + Dashboard */}
-          <div className="flex-1 flex flex-col overflow-hidden px-3 pt-2 pb-3 gap-2">
-            {/* Metric Cards */}
-            {predictions.length > 0 && <MetricCards />}
-
-            {/* Map + Right Panel */}
-            <div className="flex-1 flex gap-3 min-h-0">
-              {/* Map */}
-              <div className="flex-1 min-w-0">
-                <CityMap />
-              </div>
-
-              {/* Right info column */}
-              <div className="w-64 flex flex-col gap-3 overflow-y-auto">
-                <OptimizerPanel />
-                <TopLocations />
-              </div>
-            </div>
+          <div className="pointer-events-auto">
+            <ResultsCard />
           </div>
+        </div>
 
-          {/* Cell Detail Panel */}
-          {selectedCellId && <CellDetail />}
+        {/* Mobile fallback: stacked, scrollable — replaced by a bottom sheet in a later pass */}
+        <div className="md:hidden flex-1 min-h-0 overflow-y-auto px-3 pb-3 space-y-3 pointer-events-auto">
+          <ControlsCard />
+          <ResultsCard />
+        </div>
+
+        <div className="hidden md:block absolute bottom-3 left-3 pointer-events-none">
+          <MapLegend />
         </div>
       </div>
+
+      <SideSheet
+        open={!!selectedCellId}
+        onClose={() => setSelectedCellId(null)}
+        title={selectedCellId ?? ''}
+      >
+        {selectedCellId && <CellDetail key={selectedCellId} gridId={selectedCellId} />}
+      </SideSheet>
     </div>
+  )
+}
+
+export default function DashboardPage() {
+  return (
+    <MapFocusProvider>
+      <DashboardContent />
+    </MapFocusProvider>
   )
 }

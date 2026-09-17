@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { MapContainer, TileLayer, useMap, CircleMarker, Popup } from 'react-leaflet'
 import L from 'leaflet'
 import type { Map as LeafletMap } from 'leaflet'
 import { useApp } from '@/hooks/useApp'
+import { useMapFocus } from '@/hooks/useMapFocus'
 import { formatPercent } from '@/lib/utils'
 import { theme, profitColorHex, profitFillOpacity } from '@/lib/theme'
 import { basemap } from '@/lib/basemap'
-import SearchBar from './SearchBar'
+import Spinner from '@/components/ui/Spinner'
 
 function FlyToCity({ lat, lon, zoom }: { lat: number; lon: number; zoom: number }) {
   const map = useMap()
@@ -19,13 +20,14 @@ function FlyToCity({ lat, lon, zoom }: { lat: number; lon: number; zoom: number 
   return null
 }
 
-function FlyToPoint({ target }: { target: { lat: number; lon: number; zoom: number } | null }) {
+function FlyToPoint() {
   const map = useMap()
+  const { flyTarget } = useMapFocus()
   useEffect(() => {
-    if (target) {
-      map.flyTo([target.lat, target.lon], target.zoom, { duration: 1.2 })
+    if (flyTarget) {
+      map.flyTo([flyTarget.lat, flyTarget.lon], flyTarget.zoom, { duration: 1.2 })
     }
-  }, [target, map])
+  }, [flyTarget, map])
   return null
 }
 
@@ -154,13 +156,11 @@ function HubMarkers() {
   )
 }
 
-function MapLegend() {
+export function MapLegend() {
   const { optimizeResult } = useApp()
 
   return (
-    <div
-      className="absolute bottom-6 left-6 z-[1000] flex items-center gap-4 px-4 py-2.5 rounded-full panel"
-    >
+    <div className="pointer-events-auto panel flex items-center gap-4 px-4 py-2.5 rounded-full">
       <div className="flex items-center gap-1.5">
         <div className="w-2.5 h-2.5 rounded-full" style={{ background: theme.profitHigh }} />
         <span className="text-[11px] text-text-secondary">High &gt;0.7</span>
@@ -183,64 +183,22 @@ function MapLegend() {
   )
 }
 
+/** Full-bleed map — panels float over it (see DashboardPage), it is never resized by them. */
 export default function CityMap() {
-  const { cities, selectedCity, predictions, predictionsLoading, predictionsError, setSelectedCellId } = useApp()
+  const { cities, selectedCity, predictions, predictionsLoading, predictionsError } = useApp()
   const mapRef = useRef<LeafletMap | null>(null)
-  const [flyTarget, setFlyTarget] = useState<{ lat: number; lon: number; zoom: number } | null>(null)
 
   const cityInfo = cities.find(c => c.key === selectedCity)
   const centerLat = cityInfo?.map_center.lat ?? 28.65
   const centerLon = cityInfo?.map_center.lon ?? 77.10
   const zoom = cityInfo?.zoom || 10.2
 
-  const handleSearchSelect = useCallback((lat: number, lon: number) => {
-    // 1. Fly map to the searched location
-    setFlyTarget({ lat, lon, zoom: 15 })
-
-    // 2. Find the nearest grid cell within ~2km
-    if (predictions.length === 0) return
-
-    let bestDist = Infinity
-    let bestId: string | null = null
-
-    for (const p of predictions) {
-      const dLat = (p.lat - lat) * 111.32 // ~km per degree lat
-      const dLon = (p.lon - lon) * 111.32 * Math.cos(lat * Math.PI / 180)
-      const dist = Math.sqrt(dLat * dLat + dLon * dLon)
-      if (dist < bestDist) {
-        bestDist = dist
-        bestId = p.grid_id
-      }
-    }
-
-    // Only auto-select if within 2km — otherwise it's out of grid bounds
-    if (bestId && bestDist < 2) {
-      setSelectedCellId(bestId)
-    }
-  }, [predictions, setSelectedCellId])
-
   return (
-    <div
-      className="relative w-full h-full overflow-hidden"
-      style={{
-        borderRadius: '16px',
-        border: '1px solid rgb(var(--line) / 0.08)',
-      }}
-    >
-      {/* Search Bar */}
-      <SearchBar onSelect={handleSearchSelect} />
-
-      {/* Loading overlay */}
+    <div className="fixed inset-0">
       {predictionsLoading && (
-        <div
-          className="absolute inset-0 z-[1000] flex items-center justify-center"
-          style={{ background: 'rgb(var(--bg) / 0.85)', backdropFilter: 'blur(8px)' }}
-        >
+        <div className="absolute inset-0 z-[1000] flex items-center justify-center" style={{ background: 'rgb(var(--bg) / 0.85)', backdropFilter: 'blur(8px)' }}>
           <div className="flex flex-col items-center gap-3 text-center px-6">
-            <div
-              className="w-5 h-5 rounded-full animate-spin-slow"
-              style={{ border: '2px solid rgb(var(--line) / 0.1)', borderTopColor: theme.accent }}
-            />
+            <Spinner />
             <span className="text-sm text-text-secondary">Scoring grid cells…</span>
             <span className="text-xs text-text-muted max-w-[220px]">
               First load can take up to a minute while the model server wakes up.
@@ -249,12 +207,8 @@ export default function CityMap() {
         </div>
       )}
 
-      {/* Error overlay */}
       {!predictionsLoading && predictionsError && predictions.length === 0 && (
-        <div
-          className="absolute inset-0 z-[1000] flex items-center justify-center"
-          style={{ background: 'rgb(var(--bg) / 0.85)', backdropFilter: 'blur(8px)' }}
-        >
+        <div className="absolute inset-0 z-[1000] flex items-center justify-center" style={{ background: 'rgb(var(--bg) / 0.85)', backdropFilter: 'blur(8px)' }}>
           <div className="flex flex-col items-center gap-2 text-center px-6 max-w-[280px]">
             <span className="text-sm" style={{ color: theme.profitLow }}>{predictionsError}</span>
           </div>
@@ -282,19 +236,10 @@ export default function CityMap() {
           maxZoom={basemap.maxZoom}
         />
         <FlyToCity lat={centerLat} lon={centerLon} zoom={zoom} />
-        <FlyToPoint target={flyTarget} />
+        <FlyToPoint />
         {predictions.length > 0 && <GridLayer />}
         <HubMarkers />
       </MapContainer>
-
-      <MapLegend />
-
-      {/* Cell count badge */}
-      <div
-        className="absolute top-4 right-4 z-[1000] px-3 py-1.5 rounded-full text-[11px] text-text-secondary panel"
-      >
-        {predictions.length.toLocaleString()} cells loaded
-      </div>
     </div>
   )
 }
