@@ -9,27 +9,18 @@ export default {
       colors: {
         background: "rgb(var(--bg) / <alpha-value>)",
         surface: "rgb(var(--surface) / <alpha-value>)",
-        "surface-light": "rgb(var(--surface-raised) / <alpha-value>)",
-        glass: "rgb(var(--surface) / 0.6)",
-        "glass-border": "rgb(var(--line) / 0.08)",
-        "glass-hover": "rgb(var(--surface-raised) / 0.7)",
         border: "rgb(var(--line) / 0.08)",
-        "border-active": "rgb(var(--accent) / 0.4)",
         "text-primary": "rgb(var(--text) / <alpha-value>)",
         "text-secondary": "rgb(var(--text-muted) / <alpha-value>)",
         "text-muted": "rgb(var(--text-subtle) / <alpha-value>)",
         accent: "rgb(var(--accent) / <alpha-value>)",
         "accent-fg": "rgb(var(--accent-fg) / <alpha-value>)",
-        // Legacy alias — "blue" accent is now the same single accent colour.
-        "accent-blue": "rgb(var(--accent) / <alpha-value>)",
         success: "rgb(var(--profit-high) / <alpha-value>)",
         warning: "rgb(var(--profit-mid) / <alpha-value>)",
         danger: "rgb(var(--profit-low) / <alpha-value>)",
         "profit-high": "rgb(var(--profit-high) / <alpha-value>)",
         "profit-mid": "rgb(var(--profit-mid) / <alpha-value>)",
         "profit-low": "rgb(var(--profit-low) / <alpha-value>)",
-        "glow-green": "rgb(var(--accent) / 0.15)",
-        "glow-blue": "rgb(var(--accent) / 0.15)",
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "-apple-system", "sans-serif"],
@@ -37,15 +28,11 @@ export default {
         mono: ["'Space Grotesk'", "'JetBrains Mono'", "monospace"],
       },
       borderRadius: {
-        glass: "16px",
         panel: "14px",
         control: "10px",
       },
       boxShadow: {
         panel: "0 8px 24px rgb(0 0 0 / .35)",
-        "glow-green": "0 0 30px rgb(var(--accent) / 0.15)",
-        "glow-green-lg": "0 0 50px rgb(var(--accent) / 0.2)",
-        "glow-blue": "0 0 30px rgb(var(--accent) / 0.15)",
       },
       zIndex: {
         panel: "10",
