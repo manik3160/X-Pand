@@ -40,17 +40,12 @@ function OptimizeSummary() {
   )
 }
 
-export default function ResultsCard() {
+/** Chips + optimizer summary + tabbed lists, shared between the desktop floating card and the mobile bottom sheet. */
+export function ResultsContent() {
   const { optimizeResult } = useApp()
 
   return (
-    <Panel
-      title="Results"
-      icon={<ListChecks className="w-3.5 h-3.5 text-text-muted" />}
-      collapsible
-      className="w-[300px] max-h-[70vh] flex flex-col"
-      bodyClassName="flex-1 overflow-y-auto flex flex-col"
-    >
+    <>
       <div className="px-3 pt-3">
         <MetricChips />
       </div>
@@ -69,6 +64,20 @@ export default function ResultsCard() {
           <OptimizerPanel />
         </TabsContent>
       </Tabs>
+    </>
+  )
+}
+
+export default function ResultsCard() {
+  return (
+    <Panel
+      title="Results"
+      icon={<ListChecks className="w-3.5 h-3.5 text-text-muted" />}
+      collapsible
+      className="w-[300px] max-h-[70vh] flex flex-col"
+      bodyClassName="flex-1 overflow-y-auto flex flex-col"
+    >
+      <ResultsContent />
     </Panel>
   )
 }
