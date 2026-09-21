@@ -1,33 +1,30 @@
 import { useNavigate } from 'react-router-dom'
-import { Grid3X3, Brain, BarChart3, ArrowRight } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { useApp } from '@/hooks/useApp'
 import HeroMapPreview from '@/components/landing/HeroMapPreview'
-import { theme } from '@/lib/theme'
+import { GridScaleVisual, PipelineVisual, ShapVisual } from '@/components/landing/FeatureVisuals'
 
-/* ─── Feature Card ─── */
-function FeatureCard({
-  icon: Icon,
+/* ─── Feature block: a heading + description with a fragment of the product beside/below it ─── */
+function FeatureBlock({
   title,
   description,
-  iconColor,
-  delay,
+  className = '',
+  split = false,
+  children,
 }: {
-  icon: React.ElementType
   title: string
   description: string
-  iconColor: string
-  delay: string
+  className?: string
+  split?: boolean
+  children: React.ReactNode
 }) {
   return (
-    <div className="glass-card-hover p-6 cursor-default animate-fade-up" style={{ animationDelay: delay }}>
-      <div
-        className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
-        style={{ background: `${iconColor}15`, border: `1px solid ${iconColor}30` }}
-      >
-        <Icon className="w-5 h-5" style={{ color: iconColor }} aria-hidden="true" />
+    <div className={`glass-card p-6 sm:p-8 ${split ? 'md:grid md:grid-cols-2 md:gap-10 md:items-center' : ''} ${className}`}>
+      <div>
+        <h3 className="text-lg font-semibold text-text-primary mb-2 font-heading">{title}</h3>
+        <p className="text-sm text-text-secondary leading-relaxed max-w-md">{description}</p>
       </div>
-      <h3 className="text-base font-semibold text-text-primary mb-2 font-heading">{title}</h3>
-      <p className="text-sm text-text-secondary leading-relaxed">{description}</p>
+      <div className={split ? 'mt-6 md:mt-0' : ''}>{children}</div>
     </div>
   )
 }
@@ -74,14 +71,6 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-8 w-full flex flex-col lg:flex-row items-center gap-12">
 
           <div className="flex-1 w-full lg:max-w-[55%]">
-            <div
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-8 animate-fade-up"
-              style={{ background: 'rgb(var(--surface-raised) / 0.5)', border: '1px solid rgb(var(--line) / 0.08)' }}
-            >
-              <div className="live-dot-sm" />
-              <span className="text-sm text-accent font-medium">ML-powered · 500m grid · explainable scoring</span>
-            </div>
-
             <h1 className="text-[42px] sm:text-[56px] lg:text-[64px] font-bold font-heading leading-[1.05] tracking-[-0.03em] mb-6 animate-fade-up" style={{ animationDelay: '0.1s' }}>
               <span className="text-text-primary">Predict where</span>
               <br />
@@ -118,30 +107,33 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══ FEATURE CARDS ═══ */}
+      {/* ═══ HOW IT WORKS — each block shows a fragment of the product, not an icon ═══ */}
       <section className="py-24 px-4 sm:px-8">
-        <div className="max-w-7xl mx-auto grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <FeatureCard
-            icon={Grid3X3}
-            title="500m precision grid"
-            description="Not pin codes. Not districts. Every 500-metre cell of a city scored independently using satellite and OSM data."
-            iconColor={theme.profitHigh}
-            delay="0.5s"
-          />
-          <FeatureCard
-            icon={Brain}
-            title="4-stage pipeline"
-            description="GWR → LightGBM → Thompson Sampling → BIP. Chained spatial intelligence with confidence intervals."
-            iconColor={theme.accent}
-            delay="0.6s"
-          />
-          <FeatureCard
-            icon={BarChart3}
-            title="Explainable by default"
-            description="Every prediction ships with SHAP drivers, confidence bounds, and a plain-language recommendation."
-            iconColor={theme.profitMid}
-            delay="0.7s"
-          />
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-5 gap-6">
+          <FeatureBlock
+            className="lg:col-span-3"
+            title="Scored per 500-metre cell, not per pin code"
+            description="Every cell of a city is scored on its own, from satellite and OpenStreetMap data — so a good block and a bad block next door don't average each other out."
+          >
+            <GridScaleVisual />
+          </FeatureBlock>
+
+          <FeatureBlock
+            className="lg:col-span-2"
+            title="Four models, chained"
+            description="Each stage feeds the next, from local spatial context through to choosing the sites."
+          >
+            <PipelineVisual />
+          </FeatureBlock>
+
+          <FeatureBlock
+            className="lg:col-span-5"
+            split
+            title="Every score comes with its reasons"
+            description="Each prediction ships with the top feature drivers, a confidence interval, and a plain-language recommendation — so you can argue with it, not just accept it."
+          >
+            <ShapVisual />
+          </FeatureBlock>
         </div>
       </section>
 

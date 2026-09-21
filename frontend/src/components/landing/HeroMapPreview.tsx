@@ -1,20 +1,7 @@
 import { useMemo } from 'react'
 import { TrendingUp } from 'lucide-react'
 import { theme } from '@/lib/theme'
-
-// Deterministic PRNG (mulberry32) so the preview grid looks the same on
-// every load instead of reshuffling — this is illustrative, not real
-// data, so it should read as a fixed piece of art, not a flaky animation.
-function mulberry32(seed: number) {
-  let a = seed
-  return () => {
-    a |= 0
-    a = (a + 0x6d2b79f5) | 0
-    let t = Math.imul(a ^ (a >>> 15), 1 | a)
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-  }
-}
+import { mulberry32 } from '@/lib/seeded'
 
 const COLS = 14
 const ROWS = 10
